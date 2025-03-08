@@ -58,11 +58,18 @@ while (true)
             Console.WriteLine($"from server exception: {ex.Message}");
         }
     }
+    else if (String.Compare(message!, "/q", StringComparison.InvariantCultureIgnoreCase) == 0)
+    {
+        break;
+    }
     else
     {
         await hub.SendMessageAsync(message);
     }
 }
+
+await hub.DisposeAsync();
+await channel.ShutdownAsync();
 
 [MagicOnionClientGeneration(typeof(IChatHub))]
 partial class MagicOnionGeneratedClientInitializer;
