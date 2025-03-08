@@ -1,5 +1,6 @@
 // See https://aka.ms/new-console-template for more information
 
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using ChatApp.Shared.Hubs;
@@ -24,8 +25,11 @@ if (!RuntimeFeature.IsDynamicCodeSupported)
 
 var channel = GrpcChannel.ForAddress("http://localhost:5000");
 var sessionId = Guid.NewGuid();
+var receiver = new ChatHubReceiver(sessionId);
+
 Console.WriteLine("Connecting...");
-var hub = await StreamingHubClient.ConnectAsync<IChatHub, IChatHubReceiver>(channel, new ChatHubReceiver(sessionId));
+var hub = await StreamingHubClient.ConnectAsync<IChatHub, IChatHubReceiver>(channel, receiver);
+RegisterDisconnectEvent(hub);
 Console.WriteLine($"Connected: {sessionId}");
 
 var service = MagicOnionClient.Create<IChatService>(channel);
@@ -70,6 +74,37 @@ while (true)
 
 await hub.DisposeAsync();
 await channel.ShutdownAsync();
+
+async void RegisterDisconnectEvent(IChatHub streamingClient)
+{
+    try
+    {
+        // you can wait disconnected event
+        await streamingClient.WaitForDisconnect();
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"{e.Message}");
+    }
+    finally
+    {
+        // try-to-reconnect? logging event? close? etc...
+        Console.WriteLine($"disconnected from the server.");
+
+        await Task.Delay(2000);
+
+        // reconnect
+        await ReconnectServerAsync();
+    }
+}
+
+async Task ReconnectServerAsync()
+{
+    Console.WriteLine($"Reconnecting to the server...");
+    hub = await StreamingHubClient.ConnectAsync<IChatHub, IChatHubReceiver>(channel, receiver);
+    RegisterDisconnectEvent(hub);
+    Console.WriteLine("Reconnected.");
+}
 
 [MagicOnionClientGeneration(typeof(IChatHub))]
 partial class MagicOnionGeneratedClientInitializer;

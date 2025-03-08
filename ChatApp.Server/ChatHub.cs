@@ -1,4 +1,4 @@
-using ChatApp.Shared.Hubs;
+﻿using ChatApp.Shared.Hubs;
 using ChatApp.Shared.MessagePackObjects;
 using MagicOnion.Server.Hubs;
 using System;
@@ -72,6 +72,8 @@ public class ChatHub : StreamingHubBase<IChatHub, IChatHubReceiver>, IChatHub
         throw new System.NotImplementedException();
     }
 
+    // 소켓 Accept 처리와 같은 처리를 이곳에서 해야겠다.
+    // 세션 객체를 만들고 hub와 물려주자
     protected override ValueTask OnConnecting()
     {
         // handle connection if needed.
